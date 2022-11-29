@@ -4,46 +4,55 @@ const PORT = 8080; //default port 8080
 
 app.set("view engine", "ejs");
 
+//our database of long and shortened URLS
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-app.get("/", (req, res) =>  {
+app.get("/", (req, res) => {
   res.send("Hello!!!");
 });
 
-app.get("/urls.json", (req, res)  =>  {
+app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/urls", (req, res) =>  {
-  const templatevars = { urls: urlDatabase};
+//renders the main URL page, with the (object) database of existing shortened and full length URLS
+app.get("/urls", (req, res) => {
+  const templatevars = { urls: urlDatabase };
   res.render("urls_index", templatevars);
 })
 
+//creates a subpage for the shortened URL ID key offered in the URL itself
 app.get("/urls/:id", (req, res) => {
   console.log(req.params);
-  const templateVars = { 
+  const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id]
-   };
+  };
   res.render("urls_show", templateVars);
 });
 
+//initial example data
 app.get("/set", (req, res) => {
   const a = 1;
   res.send(`a = ${a}`);
- });
- 
- app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
- });
+});
 
-app.get("/hello", (req, res)  =>  {
+//renders the new page, responsible for a new entry
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+app.get("/fetch", (req, res) => {
+  res.send(`a = ${a}`);
+});
+
+app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-app.listen(PORT, () =>  {
+app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
