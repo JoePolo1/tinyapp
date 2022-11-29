@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; //default port 8080
 
 app.set("view engine", "ejs");
+app.use(express.urlencoded({ extended:true }));
 
 //our database of long and shortened URLS
 const urlDatabase = {
@@ -22,7 +23,12 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const templatevars = { urls: urlDatabase };
   res.render("urls_index", templatevars);
-})
+});
+
+//renders the new page, responsible for a new entry. Needs to be above urls/:id
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
 
 //creates a subpage for the shortened URL ID key offered in the URL itself
 app.get("/urls/:id", (req, res) => {
@@ -35,19 +41,15 @@ app.get("/urls/:id", (req, res) => {
 });
 
 //initial example data
-app.get("/set", (req, res) => {
-  const a = 1;
-  res.send(`a = ${a}`);
-});
+// app.get("/set", (req, res) => {
+//   const a = 1;
+//   res.send(`a = ${a}`);
+// });
 
-//renders the new page, responsible for a new entry
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
-
-app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
-});
+//test data only
+// app.get("/fetch", (req, res) => {
+//   res.send(`a = ${a}`);
+// });
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
