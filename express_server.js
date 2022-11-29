@@ -22,6 +22,10 @@ app.get("/urls", (req, res) =>  {
   res.render("urls_index", templatevars);
 })
 
+app.get("/urls show", (req, res)  =>  {
+  //this is a new route which should direct to the urls_show page... now, what to do with it?
+})
+
 app.get("/set", (req, res) => {
   const a = 1;
   res.send(`a = ${a}`);
