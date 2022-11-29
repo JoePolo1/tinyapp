@@ -58,8 +58,10 @@ app.post("/urls", (req, res) => {
   //2) store that string as a variable representing short URL
   //3) grab the long URL from the input on the new page
   //4) add that to the URL database
-  console.log(req.body.longURL)
-  console.log(req.body); // Log the POST request body to the console
+  let shortUrl = generateRandomString()
+  let longUrl = req.body.longURL;
+  urlDatabase[shortUrl] = longUrl;
+  console.log(urlDatabase);
   res.send("Ok"); // Respond with 'Ok' (we will replace this)
 });
 
