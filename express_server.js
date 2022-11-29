@@ -2,6 +2,17 @@ const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
 
+function generateRandomString() {
+  let randomChars = "";
+  const alphaNum = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (let i = 0; i <= 5; i++)  {
+    //62 characters in the alphanumeric possibilities including capitalized letters
+    randomChars += alphaNum.charAt(Math.floor(Math.random() * 62));
+  }
+  console.log(randomChars);
+  return randomChars;
+};
+
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended:true }));
 
@@ -38,6 +49,18 @@ app.get("/urls/:id", (req, res) => {
     longURL: urlDatabase[req.params.id]
   };
   res.render("urls_show", templateVars);
+});
+
+
+
+app.post("/urls", (req, res) => {
+  //1) complete generate random string function to produce 6 alphanumeric string
+  //2) store that string as a variable representing short URL
+  //3) grab the long URL from the input on the new page
+  //4) add that to the URL database
+  console.log(req.body.longURL)
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
 });
 
 //initial example data
