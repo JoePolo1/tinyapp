@@ -17,6 +17,11 @@ app.get("/urls.json", (req, res)  =>  {
   res.json(urlDatabase);
 });
 
+app.get("/urls", (req, res) =>  {
+  const templatevars = { urls: urlDatabase};
+  res.render("urls_index", templatevars);
+})
+
 app.get("/set", (req, res) => {
   const a = 1;
   res.send(`a = ${a}`);
