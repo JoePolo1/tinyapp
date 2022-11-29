@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
 
+
+//This function generates a random 6 character alphanumeric code used for the shortened URLS
 const generateRandomString = function() {
   let randomChars = "";
   const alphaNum = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -12,8 +14,10 @@ const generateRandomString = function() {
   return randomChars;
 };
 
+
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended:true }));
+
 
 //our database of long and shortened URLS
 const urlDatabase = {
@@ -21,13 +25,16 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+
 app.get("/", (req, res) => {
   res.send("Hello!!!");
 });
 
+
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
+
 
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
@@ -35,10 +42,12 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templatevars);
 });
 
+
 //renders the new page, responsible for a new entry. Needs to be above urls/:id
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
+
 
 //creates a subpage for the shortened URL ID key offered in the URL itself
 app.get("/urls/:id", (req, res) => {
@@ -49,6 +58,9 @@ app.get("/urls/:id", (req, res) => {
   };
   res.render("urls_show", templateVars);
 });
+
+
+
 
 
 
@@ -69,6 +81,20 @@ app.get("/u/:id", (req,res) =>  {
   const longURL = templateVars.longURL;
   res.redirect(longURL);
 });
+
+
+// This is responsible for deleting the selected URL key value pair
+app.post("/urls/:id/delete", (req, res) =>  {
+  delete urlDatabase[req.params.id];
+  res.redirect(`/urls`);
+})
+
+
+//This is the post request submitted via the edit button which redirects to the specific page of the selected shortened URL
+app.post("/urls/:id/edit", (req, res) =>  {
+  res.redirect(`/urls/:id`);
+})
+
 
 //initial example data
 // app.get("/set", (req, res) => {
