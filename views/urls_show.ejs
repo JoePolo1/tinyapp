@@ -27,7 +27,17 @@
         <div class="card-body">
           <h5 class="card-title">Edit %></h5>
         <p class="card-text">
-          New URL: <a href="/u/<%= id %>"><%= id %></a>
+          New URL: <a href="/u/<%= id %>"></a>
+          <form method="POST" action="/urls/<%=id%>/update">
+            <input 
+              style="width: 25%"
+              type="text"
+              name="longURL"
+              id="Edit"
+              placeholder="http://"
+            />
+            <button type="submit">Submit</button>
+          </form>
         </p>
 
         </div>

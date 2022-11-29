@@ -50,7 +50,7 @@ app.get("/urls/new", (req, res) => {
 
 
 //creates a subpage for the shortened URL ID key offered in the URL itself
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => { 
   // console.log(req.params);
   const templateVars = {
     id: req.params.id,
@@ -58,10 +58,6 @@ app.get("/urls/:id", (req, res) => {
   };
   res.render("urls_show", templateVars);
 });
-
-
-
-
 
 
 app.post("/urls", (req, res) => {
@@ -91,8 +87,13 @@ app.post("/urls/:id/delete", (req, res) =>  {
 
 
 //This is the post request submitted via the edit button which redirects to the specific page of the selected shortened URL
-app.post("/urls/:id/edit", (req, res) =>  {
-  res.redirect(`/urls/:id`);
+//this likely need to be edited
+app.post("/urls/:id/update", (req, res) => {
+  const longURL = req.body.longURL
+  const shortURL = req.params.id
+
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls`);
 })
 
 
