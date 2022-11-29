@@ -9,9 +9,8 @@ function generateRandomString() {
     //62 characters in the alphanumeric possibilities including capitalized letters
     randomChars += alphaNum.charAt(Math.floor(Math.random() * 62));
   }
-  console.log(randomChars);
   return randomChars;
-};
+}
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended:true }));
@@ -43,7 +42,7 @@ app.get("/urls/new", (req, res) => {
 
 //creates a subpage for the shortened URL ID key offered in the URL itself
 app.get("/urls/:id", (req, res) => {
-  console.log(req.params);
+  // console.log(req.params);
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id]
@@ -54,15 +53,21 @@ app.get("/urls/:id", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  //1) complete generate random string function to produce 6 alphanumeric string
-  //2) store that string as a variable representing short URL
-  //3) grab the long URL from the input on the new page
-  //4) add that to the URL database
-  let shortUrl = generateRandomString()
+  let shortUrl = generateRandomString();
   let longUrl = req.body.longURL;
   urlDatabase[shortUrl] = longUrl;
   console.log(urlDatabase);
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/:${shortUrl}`); // Respond with 'Ok' (we will replace this)
+});
+
+app.get("/u/:id", (req,res) =>  {
+  //const longURL = ...
+  const templateVars = {
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id]
+  };
+  const longURL = templateVars.longURL;
+  res.redirect(longURL);
 });
 
 //initial example data
