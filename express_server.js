@@ -116,7 +116,7 @@ app.post("/urls/login", (req, res) => {
 
 
 // Logout functionality which clears cookies
-app.post("/urls/logout", (req, res) =>  {
+app.post("/logout", (req, res) =>  {
   res.clearCookie("username");
   res.redirect(`/urls`);
 })
