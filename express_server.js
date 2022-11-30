@@ -4,7 +4,7 @@ const PORT = 8080; //default port 8080
 const cookieParser = require('cookie-parser');
 
 
-//sets the view engine
+//sets the view engine and allows express and cookieParser to be used
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -55,6 +55,7 @@ const urlDatabase = {
 };
 
 
+//Root dir. Just says hello.
 app.get("/", (req, res) => {
   res.send("Hello!!!");
 });
@@ -68,16 +69,17 @@ app.get("/urls.json", (req, res) => {
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
   const templatevars = {
-    username: req.cookies["username"],
+    user: users[req.cookies.user_id],
     urls: urlDatabase
   };
   res.render("urls_index", templatevars);
 });
 
 
+
 //This page is the end point that gets the registration page. For now, it redirects to itself as a response.
 app.get("/register",  (req, res)  =>  {
-  const templateVars = {username: req.cookies["username"]};
+  const templateVars = {user: users[req.cookies.user_id]};
   res.render("register", templateVars);
 });
 
@@ -85,7 +87,7 @@ app.get("/register",  (req, res)  =>  {
 //renders the new page, responsible for a new entry. Needs to be above urls/:id
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"]
+    user: users[req.cookies.user_id]
   };
   res.render("urls_new", templateVars);
 });
@@ -95,7 +97,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   // console.log(req.params);
   const templateVars = {
-    username: req.cookies["username"],
+    user: users[req.cookies.user_id],
     id: req.params.id,
     longURL: urlDatabase[req.params.id]
   };
@@ -105,7 +107,7 @@ app.get("/urls/:id", (req, res) => {
 app.get("/u/:id", (req, res) => {
   //const longURL = ...
   const templateVars = {
-    username: req.cookies["username"],
+    user: users[req.cookies.user_id],
     id: req.params.id,
     longURL: urlDatabase[req.params.id]
   };
@@ -181,7 +183,7 @@ app.post("/urls/login", (req, res) => {
 
 // Logout functionality which clears cookies
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect(`/urls`);
 });
 
