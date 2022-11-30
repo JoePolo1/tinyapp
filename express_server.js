@@ -114,6 +114,14 @@ app.post("/urls/login", (req, res) => {
   res.redirect(`/urls`);
 })
 
+
+// Logout functionality which clears cookies
+app.post("/urls/logout", (req, res) =>  {
+  res.clearCookie("username");
+  res.redirect(`/urls`);
+})
+
+
 //initial example data
 // app.get("/set", (req, res) => {
 //   const a = 1;
