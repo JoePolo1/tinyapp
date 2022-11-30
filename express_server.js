@@ -40,12 +40,18 @@ app.get("/urls.json", (req, res) => {
 
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
-
   const templatevars = {
     username: req.cookies["username"],
     urls: urlDatabase
   };
   res.render("urls_index", templatevars);
+});
+
+
+//This page is the end point that gets the registration page. For now, it redirects to itself as a response.
+app.get("/register",  (req, res)  =>  {
+  const templateVars = {username: req.cookies["username"]};
+  res.render("register", templateVars);
 });
 
 
@@ -69,15 +75,6 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
-app.post("/urls", (req, res) => {
-  let shortUrl = generateRandomString();
-  let longUrl = req.body.longURL;
-  urlDatabase[shortUrl] = longUrl;
-  console.log(urlDatabase);
-  res.redirect(`/urls/${shortUrl}`); // Respond with 'Ok' (we will replace this)
-});
-
 app.get("/u/:id", (req, res) => {
   //const longURL = ...
   const templateVars = {
@@ -88,6 +85,18 @@ app.get("/u/:id", (req, res) => {
   const longURL = templateVars.longURL;
   res.redirect(longURL);
 });
+
+
+// This generates the short URL using the function, and redirects to the short URL specific page after
+app.post("/urls", (req, res) => {
+  let shortUrl = generateRandomString();
+  let longUrl = req.body.longURL;
+  urlDatabase[shortUrl] = longUrl;
+  console.log(urlDatabase);
+  res.redirect(`/urls/${shortUrl}`); // Respond with 'Ok' (we will replace this)
+});
+
+
 
 
 // This is responsible for deleting the selected URL key value pair
