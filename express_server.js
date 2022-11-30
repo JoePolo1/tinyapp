@@ -4,6 +4,12 @@ const PORT = 8080; //default port 8080
 const cookieParser = require('cookie-parser');
 
 
+//sets the view engine
+app.set("view engine", "ejs");
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+
 //This function generates a random 6 character alphanumeric code used for the shortened URLS
 const generateRandomString = function() {
   let randomChars = "";
@@ -15,11 +21,32 @@ const generateRandomString = function() {
   return randomChars;
 };
 
-//sets the view engine
-app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
+//This function generates a random 4 character alphanumeric code used for user ID's
+const generateRandomId = function() {
+  let randomChars = "";
+  const alphaNum = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (let i = 0; i <= 3; i++) {
+    //62 characters in the alphanumeric possibilities including capitalized letters
+    randomChars += alphaNum.charAt(Math.floor(Math.random() * 62));
+  }
+  return randomChars;
+};
+
+
+//User Data
+const users = {
+  playerOne: {
+    id: "playerOne",
+    email: "user1@example.com",
+    password: "1234",
+  },
+  playerTwo: {
+    id: "playerTwo",
+    email: "user2@example.com",
+    password: "5678",
+  },
+};
 
 //our database of long and shortened URLS
 const urlDatabase = {
@@ -84,6 +111,24 @@ app.get("/u/:id", (req, res) => {
   };
   const longURL = templateVars.longURL;
   res.redirect(longURL);
+});
+
+
+// This handles the post request for a new user registration
+app.post("/register", (req, res)  =>  {
+  //Want to compare this against pre-existing user data to see if there is already an existing account
+  const email = req.body.email;
+  const password = req.body.password;
+
+  //compare above against pre-existing user data to see if there is already an existing account
+  const existingUser = userParser(email);
+  if (existingUser) {
+    //** COMPLETE LATER: responds with an error that email is already in use */
+  }
+
+  //if existingUser is false, continues with generating a new user ID
+  const id = generateRandomId();
+
 });
 
 
