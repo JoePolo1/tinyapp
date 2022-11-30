@@ -121,14 +121,24 @@ app.post("/register", (req, res)  =>  {
   const password = req.body.password;
 
   //compare above against pre-existing user data to see if there is already an existing account
-  const existingUser = userParser(email);
-  if (existingUser) {
-    //** COMPLETE LATER: responds with an error that email is already in use */
+  // const existingUser = userParser(email);
+  // if (existingUser) {
+  //   //** COMPLETE LATER: responds with an error that email is already in use */
+  // }
+
+  // Creates a new user in the users object
+  const newUser = {
+    id: generateRandomId(),
+    email: email,
+    password: password
   }
 
-  //if existingUser is false, continues with generating a new user ID
-  const id = generateRandomId();
+  //Assigns the above generated random ID as the main user ID
+  users[newUser.id] = newUser;
 
+  console.log(users);
+  res.cookie("user_id", newUser.id);
+  res.redirect("/urls");
 });
 
 
