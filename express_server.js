@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 
 
 //This function generates a random 6 character alphanumeric code used for the shortened URLS
-const generateRandomString = function () {
+const generateRandomString = function() {
   let randomChars = "";
   const alphaNum = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   for (let i = 0; i <= 5; i++) {
@@ -41,9 +41,10 @@ app.get("/urls.json", (req, res) => {
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
 
-  const templatevars = { 
+  const templatevars = {
     username: req.cookies["username"],
-    urls: urlDatabase };
+    urls: urlDatabase
+  };
   res.render("urls_index", templatevars);
 });
 
@@ -93,33 +94,32 @@ app.get("/u/:id", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
-})
+});
 
 
 //This is the post request submitted via the edit button which redirects to the specific page of the selected shortened URL
 //this likely need to be edited
 app.post("/urls/:id/update", (req, res) => {
-  const longURL = req.body.longURL
-  const shortURL = req.params.id
+  const longURL = req.body.longURL;
+  const shortURL = req.params.id;
 
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls`);
-})
+});
 
 
 //Cookie parsing at Username Login
 app.post("/urls/login", (req, res) => {
-  console.log(req.body.username);
   res.cookie("username", req.body.username);
   res.redirect(`/urls`);
-})
+});
 
 
 // Logout functionality which clears cookies
-app.post("/logout", (req, res) =>  {
+app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect(`/urls`);
-})
+});
 
 
 //initial example data
