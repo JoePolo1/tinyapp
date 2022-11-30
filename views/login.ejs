@@ -1,51 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+  rel="stylesheet"
+  href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+  integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
+  crossorigin="anonymous"
+  />
+  <title>Login Page</title>
+</head>
+<body>
+  <!--Includes Header page-->
+  <%- include('partials/_header') %>
 
-    <!-- Bootstrap CSS -->
-    <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
-      integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
-      crossorigin="anonymous"
-    />
-
-    <title>Registration Page</title>
-  </head>
-
-  <body>
-    <%- include('partials/_header') %>
   <main>
-    <h1>Register for our website!</h1>
+    <h1>Please Log In</h1>
 
-    <!-- The below are some forms to register emails and passwords on the website -->
     <p>
-      <form method="POST" action="/register">
+      <form method="POST" action="/login">
         <input
           style="width: 50%"
           type="email"
           name="email"
-          placeholder="Type your email address"
+          placeholder="Please enter your email address"
         />
         <input
           style="width: 50%"
           type="password"
           name="password"
-          placeholder="Type your password"
+          placeholder="Enter your preferred password"
         />
-        <button type="submit">Login</button>
+        <button type="submit">Continue</button>
       </form>
     </p>
-
   </main>
 
-  <!-- Bootstrap JS -->
-  <script
+    <!-- Bootstrap JS -->
+    <script
     src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
     integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
     crossorigin="anonymous"

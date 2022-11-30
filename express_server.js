@@ -91,6 +91,11 @@ app.get("/register",  (req, res)  =>  {
   res.render("register", templateVars);
 });
 
+//This is the end point for the LOGIN page
+app.get("/login",  (req, res)  =>  {
+  const templateVars = {user: users[req.cookies.user_id]};
+  res.render("login", templateVars);
+});
 
 //renders the new page, responsible for a new entry. Needs to be above urls/:id
 app.get("/urls/new", (req, res) => {
@@ -162,6 +167,10 @@ app.post("/register", (req, res)  =>  {
   res.redirect("/urls");
 });
 
+// This handles post requests for Logins
+app.post("/login", (req, res) =>  {
+
+})
 
 // This generates the short URL using the function, and redirects to the short URL specific page after
 app.post("/urls", (req, res) => {
