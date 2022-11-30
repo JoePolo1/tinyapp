@@ -21,7 +21,6 @@ const generateRandomString = function() {
   return randomChars;
 };
 
-
 //This function generates a random 4 character alphanumeric code used for user ID's
 const generateRandomId = function() {
   let randomChars = "";
@@ -32,6 +31,16 @@ const generateRandomId = function() {
   }
   return randomChars;
 };
+
+//Testing a DRYer user lookup search function
+const userLookup = function(users, email) {
+  for (const userId in users) {
+    const user = users[userId]
+    if (user.email === email) {
+      return user;
+    }
+  }
+}
 
 
 //User Data
@@ -76,7 +85,6 @@ app.get("/urls", (req, res) => {
 });
 
 
-
 //This page is the end point that gets the registration page. For now, it redirects to itself as a response.
 app.get("/register",  (req, res)  =>  {
   const templateVars = {user: users[req.cookies.user_id]};
@@ -91,7 +99,6 @@ app.get("/urls/new", (req, res) => {
   };
   res.render("urls_new", templateVars);
 });
-
 
 //creates a subpage for the shortened URL ID key offered in the URL itself
 app.get("/urls/:id", (req, res) => {
@@ -122,7 +129,19 @@ app.post("/register", (req, res)  =>  {
   const email = req.body.email;
   const password = req.body.password;
 
-  //compare above against pre-existing user data to see if there is already an existing account
+  //Returns a 400 error if a password and email are not both provided
+  if (!password || !email)  {
+    return res.status(400).send('An email and password are both required for registration.')
+  }
+
+  // Declares an empty userFound variable and passes in users
+  let existingUser = userLookup(users, email);
+  // If the above argument is truthy, directs customer to login or use a different email
+  if (existingUser) {
+    return res.status(400).send('This email is already registered. Please login or use a different email for registration')
+  }
+
+  // //compare above against pre-existing user data to see if there is already an existing account
   // const existingUser = userParser(email);
   // if (existingUser) {
   //   //** COMPLETE LATER: responds with an error that email is already in use */
