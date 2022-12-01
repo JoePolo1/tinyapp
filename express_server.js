@@ -85,6 +85,9 @@ app.get("/urls", (req, res) => {
 //This page is the end point that gets the registration page. For now, it redirects to itself as a response.
 app.get("/register",  (req, res)  =>  {
   const templateVars = {user: users[req.cookies.user_id]};
+  if(req.cookies.user_id)  {
+    res.redirect("/urls");
+  }
   res.render("register", templateVars);
 });
 
@@ -92,13 +95,16 @@ app.get("/register",  (req, res)  =>  {
 app.get("/login",  (req, res)  =>  {
   const templateVars = {user: users[req.cookies.user_id]};
   if(req.cookies.user_id)  {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
   res.render("login", templateVars);
 });
 
-//renders the new page, responsible for a new entry. Needs to be above urls/:id
+//renders the new page, responsible for a new entry. Redirects to login if user is not logged in.
 app.get("/urls/new", (req, res) => {
+  if(!req.cookies.user_id)  {
+    return res.redirect("/login");
+  }
   const templateVars = {
     user: users[req.cookies.user_id]
   };
@@ -116,15 +122,22 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+//Redirects user to long version of shortened URL when accessed. 404 if short version does not exist.
 app.get("/u/:id", (req, res) => {
-  //const longURL = ...
-  const templateVars = {
-    user: users[req.cookies.user_id],
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id]
-  };
-  const longURL = templateVars.longURL;
-  res.redirect(longURL);
+  // const templateVars = {
+  //   user: users[req.cookies.user_id],
+  //   id: req.params.id,
+  //   longURL: urlDatabase[req.params.id]
+  // };
+  // const longURL = templateVars.longURL;
+  const longURL = urlDatabase[req.params.id]
+
+  for (const urlId in urlDatabase) {
+    if (urlId === req.params.id) {
+      return res.redirect(longURL);
+    }
+  }
+  return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!')
 });
 
 
@@ -187,8 +200,11 @@ app.post("/login", (req, res) =>  {
     res.redirect('urls');
 })
 
-// This generates the short URL using the function, and redirects to the short URL specific page after
+// This generates the short URL using the function, and redirects to the short URL specific page after. Redirects to login if not logged in. 
 app.post("/urls", (req, res) => {
+  if(!req.cookies.user_id)  {
+    return res.redirect("/login");
+  }
   let shortUrl = generateRandomString();
   let longUrl = req.body.longURL;
   urlDatabase[shortUrl] = longUrl;
