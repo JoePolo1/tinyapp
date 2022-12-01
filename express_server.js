@@ -88,9 +88,12 @@ app.get("/register",  (req, res)  =>  {
   res.render("register", templateVars);
 });
 
-//This is the end point for the LOGIN page
+//This is the end point for the LOGIN page. If the user is already logged in, this redirects to the URL page.
 app.get("/login",  (req, res)  =>  {
   const templateVars = {user: users[req.cookies.user_id]};
+  if(req.cookies.user_id)  {
+    res.redirect("/urls");
+  }
   res.render("login", templateVars);
 });
 
@@ -203,7 +206,6 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id/update", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.id;
-
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls`);
 });
