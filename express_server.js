@@ -175,6 +175,7 @@ app.post("/login", (req, res) =>  {
   }
 
     // Declares an empty userFound variable and passes in email from the login post request
+    // We can re-use the user lookup function here to determine first if the user exists
     let existingUser = userLookup(users, email);
     // If the above argument is not truthy meaning the email does not exist in the DB, a 403 error is returned
     if (!existingUser) {
@@ -184,9 +185,9 @@ app.post("/login", (req, res) =>  {
     if (existingUser.password !== password) {
       return res.status(403).send('403 Forbidden.')
     }
-
-  // We can re-use the user lookup function here to determine first if the user exists
-
+    // Once those checks are complete, we can provide the cookie for the user id and redirect to our URLs page
+    res.cookie('user_id', existingUser.id);
+    res.redirect('urls');
 })
 
 // This generates the short URL using the function, and redirects to the short URL specific page after
@@ -213,16 +214,16 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect(`/urls`);
 });
 
-//Cookie parsing at Username Login
+//Cookie parsing at User Login
 app.post("/urls/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  res.cookie("user_id", req.body.user_id);
   res.redirect(`/urls`);
 });
 
 // Logout functionality which clears cookies
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect(`/urls`);
+  res.redirect(`/login`);
 });
 
 
