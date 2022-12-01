@@ -69,11 +69,9 @@ app.get("/", (req, res) => {
   res.send("Hello!!!");
 });
 
-
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
 
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
@@ -83,7 +81,6 @@ app.get("/urls", (req, res) => {
   };
   res.render("urls_index", templatevars);
 });
-
 
 //This page is the end point that gets the registration page. For now, it redirects to itself as a response.
 app.get("/register",  (req, res)  =>  {
@@ -169,6 +166,26 @@ app.post("/register", (req, res)  =>  {
 
 // This handles post requests for Logins
 app.post("/login", (req, res) =>  {
+  const email = req.body.email;
+  const password = req.body.password;
+  
+  // Similar to registration, if nothing was entered into email or password, return an error to fill out both fields
+  if (!email || !password)  {
+    return res.status(400).send('An email and password are both required for login. Please try again.')
+  }
+
+    // Declares an empty userFound variable and passes in email from the login post request
+    let existingUser = userLookup(users, email);
+    // If the above argument is not truthy meaning the email does not exist in the DB, a 403 error is returned
+    if (!existingUser) {
+      return res.status(403).send('403 Forbidden.')
+    }
+    // Similarly we can check if the passwords match with a correct email, if not, a 403 is returned
+    if (existingUser.password !== password) {
+      return res.status(403).send('403 Forbidden.')
+    }
+
+  // We can re-use the user lookup function here to determine first if the user exists
 
 })
 
@@ -181,18 +198,13 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`); // Respond with 'Ok' (we will replace this)
 });
 
-
-
-
 // This is responsible for deleting the selected URL key value pair
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
 });
 
-
 //This is the post request submitted via the edit button which redirects to the specific page of the selected shortened URL
-//this likely need to be edited
 app.post("/urls/:id/update", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.id;
@@ -201,13 +213,11 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect(`/urls`);
 });
 
-
 //Cookie parsing at Username Login
 app.post("/urls/login", (req, res) => {
   res.cookie("username", req.body.username);
   res.redirect(`/urls`);
 });
-
 
 // Logout functionality which clears cookies
 app.post("/logout", (req, res) => {
@@ -231,6 +241,7 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+// Sends a message to the console advising which port is being listened in on
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
