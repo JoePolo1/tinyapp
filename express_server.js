@@ -10,6 +10,32 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
+//User Data
+const users = {
+  playerOne: {
+    id: "playerOne",
+    email: "user1@example.com",
+    password: "1234",
+  },
+  playerTwo: {
+    id: "playerTwo",
+    email: "user2@example.com",
+    password: "5678",
+  },
+};
+
+
+const urlDatabase = {
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userId: "playerOne"
+  },
+  "9sm5xK": {
+    longURL:  "http://www.google.com",
+    userId: "playerTwo"
+  },
+};
+
 //This function generates a random 6 character alphanumeric code used for the shortened URLS
 const generateRandomString = function() {
   let randomChars = "";
@@ -42,25 +68,16 @@ const userLookup = function(users, email) {
   }
 }
 
-
-//User Data
-const users = {
-  playerOne: {
-    id: "playerOne",
-    email: "user1@example.com",
-    password: "1234",
-  },
-  playerTwo: {
-    id: "playerTwo",
-    email: "user2@example.com",
-    password: "5678",
-  },
-};
-
-//our database of long and shortened URLS
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+//This function returns an object containing the url databases assigned specifically to the user who is logged in
+const urlsForUser = function(id)  {
+  const urlData = {};
+  for (let item in urlDatabase) {
+    if (urlDatabase[item].userId === id)  {
+      urlData[item] = urlDatabase[item]
+    }
+  }
+  console.log(urlData);
+  return urlData;
 };
 
 
@@ -75,27 +92,41 @@ app.get("/urls.json", (req, res) => {
 
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
-  const templatevars = {
+  if (!req.cookies.user_id)  {
+    return res.status(401).send("Not Authorized to view this page. Please go back and Login or Register to view.");
+  }
+  //NEW TEST
+  const urls = urlsForUser(req.cookies.user_id);
+  const templateVars = { 
     user: users[req.cookies.user_id],
-    urls: urlDatabase
+    urls
   };
-  res.render("urls_index", templatevars);
+  res.render("urls_index", templateVars);
 });
 
 //This page is the end point that gets the registration page. For now, it redirects to itself as a response.
 app.get("/register",  (req, res)  =>  {
   const templateVars = {user: users[req.cookies.user_id]};
+  if(req.cookies.user_id)  {
+    res.redirect("/urls");
+  }
   res.render("register", templateVars);
 });
 
-//This is the end point for the LOGIN page
+//This is the end point for the LOGIN page. If the user is already logged in, this redirects to the URL page.
 app.get("/login",  (req, res)  =>  {
   const templateVars = {user: users[req.cookies.user_id]};
+  if(req.cookies.user_id)  {
+    return res.redirect("/urls");
+  }
   res.render("login", templateVars);
 });
 
-//renders the new page, responsible for a new entry. Needs to be above urls/:id
+//renders the new page, responsible for a new entry. Redirects to login if user is not logged in.
 app.get("/urls/new", (req, res) => {
+  if(!req.cookies.user_id)  {
+    return res.redirect("/login");
+  }
   const templateVars = {
     user: users[req.cookies.user_id]
   };
@@ -104,24 +135,33 @@ app.get("/urls/new", (req, res) => {
 
 //creates a subpage for the shortened URL ID key offered in the URL itself
 app.get("/urls/:id", (req, res) => {
-  // console.log(req.params);
+  console.log(`Req.params are: ${req.params.id}`);
+  if (!req.cookies.user_id) {
+    return res.status(401).send("401 Not Authorized.");
+  }
+  if (urlDatabase[req.params.id].userId !== req.cookies.user_id)  {
+    return res.status(401).send("Error 401: Not Authorized to view this tinyURL.");
+  }
   const templateVars = {
     user: users[req.cookies.user_id],
     id: req.params.id,
-    longURL: urlDatabase[req.params.id]
+    longURL: urlDatabase[req.params.id].longURL
   };
   res.render("urls_show", templateVars);
 });
 
+//Redirects user to long version of shortened URL when accessed. 404 if short version does not exist. 401 if the user ID does not match the database id of the object. 
 app.get("/u/:id", (req, res) => {
-  //const longURL = ...
-  const templateVars = {
-    user: users[req.cookies.user_id],
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id]
-  };
-  const longURL = templateVars.longURL;
-  res.redirect(longURL);
+  if(!urlDatabase[req.params.id]) { 
+    return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!');
+  }
+  const longUrl = urlDatabase[req.params.id].longURL;      //This correctly leads to the URL needed 
+  for (const urlId of Object.keys(urlDatabase)) {           //this for of loop appears to work as intended, redirecting to the long URL when clicked
+    if (urlId === req.params.id) {
+      return res.redirect(longUrl);
+    }
+  }
+  // return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!')
 });
 
 
@@ -142,12 +182,6 @@ app.post("/register", (req, res)  =>  {
   if (existingUser) {
     return res.status(400).send('This email is already registered. Please login or use a different email for registration')
   }
-
-  // //compare above against pre-existing user data to see if there is already an existing account
-  // const existingUser = userParser(email);
-  // if (existingUser) {
-  //   //** COMPLETE LATER: responds with an error that email is already in use */
-  // }
 
   // Creates a new user in the users object
   const newUser = {
@@ -190,27 +224,47 @@ app.post("/login", (req, res) =>  {
     res.redirect('urls');
 })
 
-// This generates the short URL using the function, and redirects to the short URL specific page after
+// This generates the short URL using the function, and redirects to the short URL specific page after. Redirects to login if not logged in. 
 app.post("/urls", (req, res) => {
+  if(!req.cookies.user_id)  {
+    return res.redirect("/login");
+  }
   let shortUrl = generateRandomString();
   let longUrl = req.body.longURL;
-  urlDatabase[shortUrl] = longUrl;
+  urlDatabase[shortUrl] = { 
+    longURL: longUrl,
+    userId: req.cookies.user_id
+  };
   console.log(urlDatabase);
-  res.redirect(`/urls/${shortUrl}`); // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/${shortUrl}`); 
 });
 
 // This is responsible for deleting the selected URL key value pair
 app.post("/urls/:id/delete", (req, res) => {
+  if(!req.cookies.user_id)  {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
+  }
+  if (urlDatabase[req.params.id].userId !== req.cookies.user_id)  {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
+  };
+  console.log(urlDatabase[req.params.id]);
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
 });
 
 //This is the post request submitted via the edit button which redirects to the specific page of the selected shortened URL
 app.post("/urls/:id/update", (req, res) => {
+  // The below && conditional checks to also see if the user is logged in before delviering this msg
+  // if ((urlDatabase[req.params.id].userId !== req.cookies.user_id) && (req.cookies.user_id))  {
+  if (urlDatabase[req.params.id].userId !== req.cookies.user_id)  {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
+  };
+  if(!req.cookies.user_id)  {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
+  }
   const longURL = req.body.longURL;
   const shortURL = req.params.id;
-
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL].longURL = longURL;
   res.redirect(`/urls`);
 });
 
@@ -225,18 +279,6 @@ app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect(`/login`);
 });
-
-
-//initial example data
-// app.get("/set", (req, res) => {
-//   const a = 1;
-//   res.send(`a = ${a}`);
-// });
-
-//test data only
-// app.get("/fetch", (req, res) => {
-//   res.send(`a = ${a}`);
-// });
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
