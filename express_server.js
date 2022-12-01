@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
+
 
 
 //sets the view engine and allows express and cookieParser to be used
@@ -12,28 +14,30 @@ app.use(cookieParser());
 
 //User Data
 const users = {
-  playerOne: {
-    id: "playerOne",
-    email: "user1@example.com",
-    password: "1234",
-  },
-  playerTwo: {
-    id: "playerTwo",
-    email: "user2@example.com",
-    password: "5678",
-  },
+  //REFERENCE TEST DATA BELOW
+  // playerOne: {
+  //   id: "playerOne",
+  //   email: "user1@example.com",
+  //   password: "1234",
+  // },
+  // playerTwo: {
+  //   id: "playerTwo",
+  //   email: "user2@example.com",
+  //   password: "5678",
+  // },
 };
 
 
 const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userId: "playerOne"
-  },
-  "9sm5xK": {
-    longURL:  "http://www.google.com",
-    userId: "playerTwo"
-  },
+  //REFERENCE TEST DATA BELOW
+  // "b2xVn2": {
+  //   longURL: "http://www.lighthouselabs.ca",
+  //   userId: "playerOne"
+  // },
+  // "9sm5xK": {
+  //   longURL:  "http://www.google.com",
+  //   userId: "playerTwo"
+  // },
 };
 
 //This function generates a random 6 character alphanumeric code used for the shortened URLS
@@ -122,7 +126,7 @@ app.get("/login",  (req, res)  =>  {
   res.render("login", templateVars);
 });
 
-//renders the new page, responsible for a new entry. Redirects to login if user is not logged in.
+//renders the new page, responsible for a new TINYURL entry. Redirects to login if user is not logged in.
 app.get("/urls/new", (req, res) => {
   if(!req.cookies.user_id)  {
     return res.redirect("/login");
@@ -169,10 +173,10 @@ app.get("/u/:id", (req, res) => {
 app.post("/register", (req, res)  =>  {
   //Want to compare this against pre-existing user data to see if there is already an existing account
   const email = req.body.email;
-  const password = req.body.password;
-
-  //Returns a 400 error if a password and email are not both provided
-  if (!password || !email)  {
+  const passwordInput = req.body.password;
+  const hashedPassword = bcrypt.hashSync(passwordInput, 10);
+  //Returns a 400 error if a password and email are not both provided in the registration fields
+  if (!passwordInput || !email)  {
     return res.status(400).send('An email and password are both required for registration.')
   }
 
@@ -187,13 +191,11 @@ app.post("/register", (req, res)  =>  {
   const newUser = {
     id: generateRandomId(),
     email: email,
-    password: password
+    password: hashedPassword      //this was changed from password: password to align with hashedPassword instead
   }
 
   //Assigns the above generated random ID as the main user ID
   users[newUser.id] = newUser;
-
-  console.log(users);
   res.cookie("user_id", newUser.id);
   res.redirect("/urls");
 });
@@ -201,13 +203,11 @@ app.post("/register", (req, res)  =>  {
 // This handles post requests for Logins
 app.post("/login", (req, res) =>  {
   const email = req.body.email;
-  const password = req.body.password;
-  
+  const password = req.body.password; 
   // Similar to registration, if nothing was entered into email or password, return an error to fill out both fields
   if (!email || !password)  {
     return res.status(400).send('An email and password are both required for login. Please try again.')
   }
-
     // Declares an empty userFound variable and passes in email from the login post request
     // We can re-use the user lookup function here to determine first if the user exists
     let existingUser = userLookup(users, email);
@@ -215,8 +215,7 @@ app.post("/login", (req, res) =>  {
     if (!existingUser) {
       return res.status(403).send('403 Forbidden.')
     }
-    // Similarly we can check if the passwords match with a correct email, if not, a 403 is returned
-    if (existingUser.password !== password) {
+    if (bcrypt.compareSync(password, (existingUser["password"])) === false) {
       return res.status(403).send('403 Forbidden.')
     }
     // Once those checks are complete, we can provide the cookie for the user id and redirect to our URLs page
