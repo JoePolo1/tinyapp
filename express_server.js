@@ -143,12 +143,6 @@ app.post("/register", (req, res)  =>  {
     return res.status(400).send('This email is already registered. Please login or use a different email for registration')
   }
 
-  // //compare above against pre-existing user data to see if there is already an existing account
-  // const existingUser = userParser(email);
-  // if (existingUser) {
-  //   //** COMPLETE LATER: responds with an error that email is already in use */
-  // }
-
   // Creates a new user in the users object
   const newUser = {
     id: generateRandomId(),
