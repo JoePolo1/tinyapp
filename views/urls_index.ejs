@@ -24,14 +24,6 @@
     <main style="margin: 1em;">
       <h3>My URLs</h3>
         <table class="table">
-          <thead>
-            <tr>
-              <td><%= id %></td>
-              <td><%= urls[id].longURL %></td>
-              <td><form method="GET" action="/urls/<%=id%>"><button type="submit">Edit</button></form></td>
-              <td><form method="POST" action="/urls/<%=id%>/delete"><button type="submit">Delete</button></form></td>
-            </tr>
-          </thead>
           <tbody>
             <% for (let id in urls) { %>
               <tr>
