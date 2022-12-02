@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
-const PORT = 8080; //default port 8080
+const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const { getUserByEmail } = require('./helpers.js');
 
-//sets the view engine and allows express and cookieParser to be used
+//sets the view engine and allows express and cookieSession to be used
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
@@ -13,9 +13,10 @@ app.use(cookieSession({
   keys: ["justOneRandomString"]
 }));
 
-//User Data
+//User Data Object holds ids, emails
 const users = {};
 
+// URL Database object holds user specific shortened URLs and notes the assigned users
 const urlDatabase = {};
 
 //This function generates a random 6 character alphanumeric code used for the shortened URLS
@@ -115,11 +116,11 @@ app.get("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
     return res.status(401).send("401 Not Authorized.");
   }
-  if (urlDatabase[req.params.id].userId !== req.session.user_id)  {
-    return res.status(401).send("Error 401: Not Authorized to view this tinyURL.");
-  }
   if(!urlDatabase[req.params.id]) { 
     return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!');
+  }
+  if (urlDatabase[req.params.id].userId !== req.session.user_id)  {
+    return res.status(401).send("Error 401: Not Authorized to view this tinyURL.");
   }
   const templateVars = {
     user: users[req.session.user_id],
@@ -140,7 +141,6 @@ app.get("/u/:id", (req, res) => {
       return res.redirect(longUrl);
     }
   }
-  // return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!')
 });
 
 
@@ -166,9 +166,9 @@ app.post("/register", (req, res)  =>  {
   const newUserId = generateRandomId();
   req.session.user_id = newUserId;
   const newUser = {
-    id: newUserId,       //this writes a new user object so changed the function to use req.session.user.id
+    id: newUserId,
     email: email,
-    password: hashedPassword      //this was changed from password: password to align with hashedPassword instead
+    password: hashedPassword
   }
 
   //Assigns the above generated random ID as the main user ID
@@ -216,12 +216,12 @@ app.post("/urls", (req, res) => {
 
 // This is responsible for deleting the selected URL key value pair
 app.post("/urls/:id/delete", (req, res) => {
-  if(!req.session.user_id)  {
-    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
-  }
   if (urlDatabase[req.params.id].userId !== req.session.user_id)  {
     return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
   };
+  if(!req.session.user_id)  {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
+  }
   console.log(urlDatabase[req.params.id]);
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
@@ -252,10 +252,6 @@ app.post("/urls/login", (req, res) => {
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect(`/login`);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 // Sends a message to the console advising which port is being listened in on
