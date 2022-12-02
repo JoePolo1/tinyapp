@@ -214,15 +214,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`); 
 });
 
-// app.get("/urls/:id/delete", (req, res) => {
-//   if (urlDatabase[req.params.id].userId !== req.session.user_id)  {
-//     return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
-//   };
-//   if(!req.session.user_id)  {
-//     return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
-//   };
-// });
-
 // This is responsible for deleting the selected URL key value pair
 app.post("/urls/:id/delete", (req, res) => {
   if(!req.session.user_id)  {
