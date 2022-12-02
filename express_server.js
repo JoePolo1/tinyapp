@@ -109,7 +109,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-//creates a subpage for the shortened URL ID key offered in the URL itself
+//The subpage for the shortened URL ID key offered in the URL itself. if the id offered in the address bar does not exist, produces error 404
 app.get("/urls/:id", (req, res) => {
   console.log(`Req.params are: ${req.params.id}`);
   if (!req.session.user_id) {
@@ -117,6 +117,9 @@ app.get("/urls/:id", (req, res) => {
   }
   if (urlDatabase[req.params.id].userId !== req.session.user_id)  {
     return res.status(401).send("Error 401: Not Authorized to view this tinyURL.");
+  }
+  if(!urlDatabase[req.params.id]) { 
+    return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!');
   }
   const templateVars = {
     user: users[req.session.user_id],
