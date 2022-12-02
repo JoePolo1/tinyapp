@@ -54,8 +54,11 @@ const urlsForUser = function(id)  {
 };
 
 
-//Root dir. Redirects to login page.
+//Root dir. Redirects to login page if not logged in. Redirects to /urls if logged in. 
 app.get("/", (req, res) => {
+  if(req.session.user_id)  {
+    return res.redirect("/urls");
+  }
   res.redirect(`/login`);
 });
 
