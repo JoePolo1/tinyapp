@@ -1,14 +1,13 @@
 const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
-// const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const { getUserByEmail } = require('./helpers.js');
 
 //sets the view engine and allows express and cookieParser to be used
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-// app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ["justOneRandomString"]
@@ -41,15 +40,6 @@ const generateRandomId = function() {
   return randomChars;
 };
 
-//Testing a DRYer user lookup search function
-const getUserByEmail = function(email, users) {
-  for (const userId in users) {
-    const user = users[userId]
-    if (user.email === email) {
-      return user;
-    }
-  }
-}
 
 //This function returns an object containing the url databases assigned specifically to the user who is logged in
 const urlsForUser = function(id)  {
@@ -64,9 +54,9 @@ const urlsForUser = function(id)  {
 };
 
 
-//Root dir. Just says hello.
+//Root dir. Redirects to login page.
 app.get("/", (req, res) => {
-  res.send("Hello!!!");
+  res.redirect(`/login`);
 });
 
 app.get("/urls.json", (req, res) => {
