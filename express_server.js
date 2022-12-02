@@ -1,40 +1,23 @@
 const express = require('express');
 const app = express();
-const PORT = 8080; //default port 8080
-const cookieParser = require('cookie-parser');
+const PORT = 8080;
+const cookieSession = require('cookie-session');
+const bcrypt = require("bcryptjs");
+const { getUserByEmail } = require('./helpers.js');
 
-
-//sets the view engine and allows express and cookieParser to be used
+//sets the view engine and allows express and cookieSession to be used
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ["justOneRandomString"]
+}));
 
+//User Data Object holds ids, emails
+const users = {};
 
-//User Data
-const users = {
-  playerOne: {
-    id: "playerOne",
-    email: "user1@example.com",
-    password: "1234",
-  },
-  playerTwo: {
-    id: "playerTwo",
-    email: "user2@example.com",
-    password: "5678",
-  },
-};
-
-
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userId: "playerOne"
-  },
-  "9sm5xK": {
-    longURL:  "http://www.google.com",
-    userId: "playerTwo"
-  },
-};
+// URL Database object holds user specific shortened URLs and notes the assigned users
+const urlDatabase = {};
 
 //This function generates a random 6 character alphanumeric code used for the shortened URLS
 const generateRandomString = function() {
@@ -58,32 +41,25 @@ const generateRandomId = function() {
   return randomChars;
 };
 
-//Testing a DRYer user lookup search function
-const userLookup = function(users, email) {
-  for (const userId in users) {
-    const user = users[userId]
-    if (user.email === email) {
-      return user;
-    }
-  }
-}
 
 //This function returns an object containing the url databases assigned specifically to the user who is logged in
-const urlsForUser = function(id)  {
+const urlsForUser = function(id) {
   const urlData = {};
   for (let item in urlDatabase) {
-    if (urlDatabase[item].userId === id)  {
-      urlData[item] = urlDatabase[item]
+    if (urlDatabase[item].userId === id) {
+      urlData[item] = urlDatabase[item];
     }
   }
-  console.log(urlData);
   return urlData;
 };
 
 
-//Root dir. Just says hello.
+//Root dir. Redirects to login page if not logged in. Redirects to /urls if logged in.
 app.get("/", (req, res) => {
-  res.send("Hello!!!");
+  if (req.session.user_id) {
+    return res.redirect("/urls");
+  }
+  res.redirect(`/login`);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -92,175 +68,167 @@ app.get("/urls.json", (req, res) => {
 
 //renders the main URL page, with the (object) database of existing shortened and full length URLS
 app.get("/urls", (req, res) => {
-  if (!req.cookies.user_id)  {
+  if (!req.session.user_id) {
     return res.status(401).send("Not Authorized to view this page. Please go back and Login or Register to view.");
   }
   //NEW TEST
-  const urls = urlsForUser(req.cookies.user_id);
-  const templateVars = { 
-    user: users[req.cookies.user_id],
+  const urls = urlsForUser(req.session.user_id);
+  const templateVars = {
+    user: users[req.session.user_id],
     urls
   };
   res.render("urls_index", templateVars);
 });
 
 //This page is the end point that gets the registration page. For now, it redirects to itself as a response.
-app.get("/register",  (req, res)  =>  {
-  const templateVars = {user: users[req.cookies.user_id]};
-  if(req.cookies.user_id)  {
+app.get("/register", (req, res) => {
+  const templateVars = { user: users[req.session.user_id] };
+  if (req.session.user_id) {
     res.redirect("/urls");
   }
   res.render("register", templateVars);
 });
 
 //This is the end point for the LOGIN page. If the user is already logged in, this redirects to the URL page.
-app.get("/login",  (req, res)  =>  {
-  const templateVars = {user: users[req.cookies.user_id]};
-  if(req.cookies.user_id)  {
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.session.user_id] };
+  if (req.session.user_id) {
     return res.redirect("/urls");
   }
   res.render("login", templateVars);
 });
 
-//renders the new page, responsible for a new entry. Redirects to login if user is not logged in.
+//renders the new page, responsible for a new TINYURL entry. Redirects to login if user is not logged in.
 app.get("/urls/new", (req, res) => {
-  if(!req.cookies.user_id)  {
+  if (!req.session.user_id) {
     return res.redirect("/login");
   }
   const templateVars = {
-    user: users[req.cookies.user_id]
+    user: users[req.session.user_id]
   };
   res.render("urls_new", templateVars);
 });
 
-//creates a subpage for the shortened URL ID key offered in the URL itself
+//The subpage for the shortened URL ID key offered in the URL itself. if the id offered in the address bar does not exist, produces error 404
 app.get("/urls/:id", (req, res) => {
-  console.log(`Req.params are: ${req.params.id}`);
-  if (!req.cookies.user_id) {
+  if (!req.session.user_id) {
     return res.status(401).send("401 Not Authorized.");
   }
-  if (urlDatabase[req.params.id].userId !== req.cookies.user_id)  {
+  if (!urlDatabase[req.params.id]) {
+    return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!');
+  }
+  if (urlDatabase[req.params.id].userId !== req.session.user_id) {
     return res.status(401).send("Error 401: Not Authorized to view this tinyURL.");
   }
   const templateVars = {
-    user: users[req.cookies.user_id],
+    user: users[req.session.user_id],
     id: req.params.id,
     longURL: urlDatabase[req.params.id].longURL
   };
   res.render("urls_show", templateVars);
 });
 
-//Redirects user to long version of shortened URL when accessed. 404 if short version does not exist. 401 if the user ID does not match the database id of the object. 
+//Redirects user to long version of shortened URL when accessed. 404 if short version does not exist. 401 if the user ID does not match the database id of the object.
 app.get("/u/:id", (req, res) => {
-  if(!urlDatabase[req.params.id]) { 
+  if (!urlDatabase[req.params.id]) {
     return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!');
   }
-  const longUrl = urlDatabase[req.params.id].longURL;      //This correctly leads to the URL needed 
-  for (const urlId of Object.keys(urlDatabase)) {           //this for of loop appears to work as intended, redirecting to the long URL when clicked
+  const longUrl = urlDatabase[req.params.id].longURL;
+  for (const urlId of Object.keys(urlDatabase)) {
     if (urlId === req.params.id) {
       return res.redirect(longUrl);
     }
   }
-  // return res.status(404).send('404 Page Not Found. Shortcut does not exist. Consider making one!')
 });
 
 
 // This handles the post request for a new user registration
-app.post("/register", (req, res)  =>  {
+app.post("/register", (req, res) => {
   //Want to compare this against pre-existing user data to see if there is already an existing account
   const email = req.body.email;
-  const password = req.body.password;
-
-  //Returns a 400 error if a password and email are not both provided
-  if (!password || !email)  {
-    return res.status(400).send('An email and password are both required for registration.')
+  const passwordInput = req.body.password;
+  const hashedPassword = bcrypt.hashSync(passwordInput, 10);
+  //Returns a 400 error if a password and email are not both provided in the registration fields
+  if (!passwordInput || !email) {
+    return res.status(400).send('An email and password are both required for registration.');
   }
 
   // Declares an empty userFound variable and passes in users
-  let existingUser = userLookup(users, email);
+  let existingUser = getUserByEmail(email, users);
   // If the above argument is truthy, directs customer to login or use a different email
   if (existingUser) {
-    return res.status(400).send('This email is already registered. Please login or use a different email for registration')
+    return res.status(400).send('This email is already registered. Please login or use a different email for registration');
   }
-
   // Creates a new user in the users object
+  const newUserId = generateRandomId();
+  req.session.user_id = newUserId;
   const newUser = {
-    id: generateRandomId(),
+    id: newUserId,
     email: email,
-    password: password
-  }
-
+    password: hashedPassword
+  };
   //Assigns the above generated random ID as the main user ID
   users[newUser.id] = newUser;
-
-  console.log(users);
-  res.cookie("user_id", newUser.id);
   res.redirect("/urls");
 });
 
 // This handles post requests for Logins
-app.post("/login", (req, res) =>  {
+app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  
   // Similar to registration, if nothing was entered into email or password, return an error to fill out both fields
-  if (!email || !password)  {
-    return res.status(400).send('An email and password are both required for login. Please try again.')
+  if (!email || !password) {
+    return res.status(400).send('An email and password are both required for login. Please try again.');
   }
+  // Declares an empty userFound variable and passes in email from the login post request
+  // We can re-use the user lookup function here to determine first if the user exists
+  let existingUser = getUserByEmail(email, users);
+  // If the above argument is not truthy meaning the email does not exist in the DB, a 403 error is returned
+  if (!existingUser) {
+    return res.status(403).send('403 Forbidden.');
+  }
+  if (bcrypt.compareSync(password, (existingUser["password"])) === false) {
+    return res.status(403).send('403 Forbidden.');
+  }
+  // Once those checks are complete, we can provide the cookie for the user id and redirect to our URLs page
+  req.session.user_id = existingUser.id;
+  res.redirect('urls');
+});
 
-    // Declares an empty userFound variable and passes in email from the login post request
-    // We can re-use the user lookup function here to determine first if the user exists
-    let existingUser = userLookup(users, email);
-    // If the above argument is not truthy meaning the email does not exist in the DB, a 403 error is returned
-    if (!existingUser) {
-      return res.status(403).send('403 Forbidden.')
-    }
-    // Similarly we can check if the passwords match with a correct email, if not, a 403 is returned
-    if (existingUser.password !== password) {
-      return res.status(403).send('403 Forbidden.')
-    }
-    // Once those checks are complete, we can provide the cookie for the user id and redirect to our URLs page
-    res.cookie('user_id', existingUser.id);
-    res.redirect('urls');
-})
-
-// This generates the short URL using the function, and redirects to the short URL specific page after. Redirects to login if not logged in. 
+// This generates the short URL using the function, and redirects to the short URL specific page after. Redirects to login if not logged in.
 app.post("/urls", (req, res) => {
-  if(!req.cookies.user_id)  {
+  if (!req.session.user_id) {
     return res.redirect("/login");
   }
   let shortUrl = generateRandomString();
   let longUrl = req.body.longURL;
-  urlDatabase[shortUrl] = { 
+  urlDatabase[shortUrl] = {
     longURL: longUrl,
-    userId: req.cookies.user_id
+    userId: req.session.user_id
   };
-  console.log(urlDatabase);
-  res.redirect(`/urls/${shortUrl}`); 
+  res.redirect(`/urls/${shortUrl}`);
 });
 
 // This is responsible for deleting the selected URL key value pair
 app.post("/urls/:id/delete", (req, res) => {
-  if(!req.cookies.user_id)  {
-    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
-  }
-  if (urlDatabase[req.params.id].userId !== req.cookies.user_id)  {
+  if (!req.session.user_id) {
     return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
-  };
-  console.log(urlDatabase[req.params.id]);
+  }
+  if (urlDatabase[req.params.id].userId !== req.session.user_id) {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
+  }
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
 });
 
 //This is the post request submitted via the edit button which redirects to the specific page of the selected shortened URL
 app.post("/urls/:id/update", (req, res) => {
-  // The below && conditional checks to also see if the user is logged in before delviering this msg
-  // if ((urlDatabase[req.params.id].userId !== req.cookies.user_id) && (req.cookies.user_id))  {
-  if (urlDatabase[req.params.id].userId !== req.cookies.user_id)  {
+  if (!req.session.user_id) {
     return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
-  };
-  if(!req.cookies.user_id)  {
-    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.")
+  }
+  // The below && conditional checks to also see if the user is logged in before delviering this msg
+  if (urlDatabase[req.params.id].userId !== req.session.user_id) {
+    return res.status(401).send("Error 401: you are not authorized to edit or delete this tinyURL.");
   }
   const longURL = req.body.longURL;
   const shortURL = req.params.id;
@@ -270,18 +238,14 @@ app.post("/urls/:id/update", (req, res) => {
 
 //Cookie parsing at User Login
 app.post("/urls/login", (req, res) => {
-  res.cookie("user_id", req.body.user_id);
+  req.session.user_id = req.body.user_id;
   res.redirect(`/urls`);
 });
 
 // Logout functionality which clears cookies
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect(`/login`);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 // Sends a message to the console advising which port is being listened in on
